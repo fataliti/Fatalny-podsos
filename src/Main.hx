@@ -21,52 +21,70 @@ class Main {
     }
 
     public static function onMessage(m:Message) {
-        if (StringTools.startsWith(m.content, "!")) {
+        if (StringTools.startsWith(m.content, pref)) {
             var words:Array<String> = m.content.split(" ");
 
-            if (words.shift() == '${pref}r34') {
+            if (words.shift() == '${pref}r') {
+                
+
+                trace("command detect");
 
                 var find = "https://r34-json-api.herokuapp.com/posts?tags=";
                 for(w in words)
                     find += w + "+";
 
                 var rget = new Http(find);
-                rget.onData = function (data:String) {
+                rget.onData = function (data:String) {  
+
+                    trace("data get");
 
                     var jlist:Array<Dynamic> = Json.parse(data); 
+                    var blacklist:Array<String> = R34.blackList;
+
                     var r = Math.ceil(Std.random(jlist.length));
-
-                    var choose = jlist[r];
-                    if (choose != null) { 
-                        trace(choose.file_url);
-                        
-                        var nm = StringTools.replace(choose.file_url, "https://r34-json-api.herokuapp.com/images?url=","");
-                        var xx:MessageCreate = {
-                            content: nm
-                        };
-                        var ss = new Endpoints(bot);
-                        ss.sendMessage(m.channel_id.id, xx);
-                    } else {
-                        var xx:MessageCreate = {
-                            content: "ничего не нашел"
-                        };
-                        var ss = new Endpoints(bot);
-                        ss.sendMessage(m.channel_id.id, xx);
-                    }
-
+                    var choose:RFile = jlist[r];
                     
-                }
-                rget.onError = function (error) {
-                    trace('error: $error  Произошел тролинк');
+                    if (choose != null) { 
+                        var taglist:Array<String> = choose.tags;
+                    
+                        var finding = true;
+                        while (finding == true)  {
+
+                            trace(r);
+
+                            var fail = false;
+                            for (tag in taglist)
+                            {   
+                                var result:Int = blacklist.indexOf(tag);
+                                if (result >= 0) {
+                                    fail = true;
+                                    break;
+                                }
+                            } 
+
+                            if (!fail) {
+                                finding = false;
+                                var nm = StringTools.replace(choose.file_url, "https://r34-json-api.herokuapp.com/images?url=","");
+                                sendMessage(nm, m.channel_id.id);
+                            }
+                            else {
+                                if (++r < jlist.length) {
+                                    choose = jlist[r];
+                                    taglist = choose.tags;
+                                } else {
+                                    finding = false;
+                                    sendMessage("мне нельзя такое показывать", m.channel_id.id);
+                                }
+                            }
+                        }         
+                    } else {
+                        sendMessage("ничего не нашел", m.channel_id.id);
+                    }
                 }
 
                 rget.request();
-
-                trace("r34 command");
                 trace(words.toString());
-            } else {
-                trace("not command");
-            }
+            } 
         }
     }
 
@@ -74,4 +92,74 @@ class Main {
         trace('invite link: ${bot.getInviteLink()}');
     }
     
+
+
+    public static function sendMessage(text:String, channleId:String) {
+        var msg:MessageCreate = {
+            content: text
+        };
+        var end = new Endpoints(bot);
+        end.sendMessage(channleId, msg);
+    }
+
+}
+
+
+typedef RFile = {
+    var score:String;
+    var file_url:String;
+    var tags:Array<String>;
+    /*
+    var height:String;
+    var parent_id:String;
+    var sample_url:String;
+    var sample_width
+    var sample_height
+    var preview_url
+    var rating
+    var id
+    var width
+    var change
+    var md5
+    var creator_id
+    var has_children
+    var created_at
+    var status
+    var source
+    var has_notes
+    var has_comments
+    var preview_width
+    var preview_height
+    var comments_url
+    var type
+    var creator_url
+    */
+}
+
+
+
+class R34 {
+
+    public static var blackList:Array<String> = [
+        "futanari",
+        "big_belly",
+        "rimming",
+        "hyper",
+        "inflation",
+        "lactating",
+        "male/male",
+        "male_on_feral",
+        "pooping",
+        "score:0",
+        "urine",
+        "belly_hair",
+        "chest_hair",
+        "slightly_chubby",
+        "overweight",
+        "big_muscles",
+        "human_penetrating_feral"
+    ];
+
+    //TODO: сделать команду для изменения теглиста
+
 }
