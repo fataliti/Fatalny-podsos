@@ -24,10 +24,9 @@ class Main {
         if (StringTools.startsWith(m.content, pref)) {
             var words:Array<String> = m.content.split(" ");
 
-            if (words.shift() == '${pref}r') {
+            if (words.shift() == '${pref}r') {  
                 
-
-                trace("command detect");
+                //trace('command detect: ${words.toString()}');
 
                 var find = "https://r34-json-api.herokuapp.com/posts?tags=";
                 for(w in words)
@@ -35,8 +34,7 @@ class Main {
 
                 var rget = new Http(find);
                 rget.onData = function (data:String) {  
-
-                    trace("data get");
+                    //trace("data get");
 
                     var jlist:Array<Dynamic> = Json.parse(data); 
                     var blacklist:Array<String> = R34.blackList;
@@ -49,9 +47,7 @@ class Main {
                     
                         var finding = true;
                         while (finding == true)  {
-
-                            trace(r);
-
+                            //trace(r);
                             var fail = false;
                             for (tag in taglist)
                             {   
@@ -83,7 +79,7 @@ class Main {
                 }
 
                 rget.request();
-                trace(words.toString());
+                
             } 
         }
     }
