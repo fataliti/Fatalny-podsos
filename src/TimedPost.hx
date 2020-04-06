@@ -31,7 +31,7 @@ class TimedPost
             trace("timerdone");
             var page = Std.random(100);
             trace(page);
-            var find = "https://r34-json-api.herokuapp.com/posts?tags=&pid="+Std.string(page);
+            var find = "https://r34-json-api.herokuapp.com/posts?tags=girly+solo&pid="+Std.string(page);
             var rget = new Http(find);
             rget.onData = function (data:String)
             {
@@ -39,13 +39,11 @@ class TimedPost
                 var blacklist:Array<String> = R34.blackList;
                 var r = Math.ceil(Std.random(jlist.length));
                 var choose:RFile = jlist[r];
-                trace("i am here");
                 if (choose != null) { 
                     var taglist:Array<String> = choose.tags;
                 
                     var finding = true;
                     while (finding == true)  {
-                        trace("i have come");
                         var fail = false;
                         for (tag in taglist)
                         {   
@@ -59,7 +57,6 @@ class TimedPost
                         if (!fail) {
                             finding = false;
                             var nm = StringTools.replace(choose.file_url, "https://r34-json-api.herokuapp.com/images?url=","");
-                            trace("bitch");
                             sendMessage(nm, "696397752611111012");
                         }
                         else {
@@ -76,7 +73,8 @@ class TimedPost
                     sendMessage("ничего не нашел", "696397752611111012");
                 }
             }
-        }           
+            rget.request();
+        }        
     }
     public static function sendMessage(text:String, channleId:String) 
     {
