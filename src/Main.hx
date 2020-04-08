@@ -28,61 +28,7 @@ class Main {
 
     static var trapGames:Map<String,Trapgame> = new Map<String,Trapgame>();
 
-    public static function trapGame(m:Message, e:ErrorReport) : Void {
-        trace(m.id);
-        var gameLinks = [
-            "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=1girl+rating:safe+small_breasts+solo&page=" + Std.string(Std.random(200)),
-            "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=trap+solo+rating:safe&page=" + Std.string(Std.random(90)),
-        ];
 
-        var itog = Std.random(gameLinks.length);
-        var find = gameLinks[itog];
-        var rget = new Http(find);
-
-        rget.onData = function (data:String) {  
-            var jlist:GFile = Json.parse(data); 
-            var blacklist:Array<String> = R34.blackList;
-
-            var r = Math.ceil(Std.random(jlist.count));
-            var choose = jlist.posts[r];
-                    
-            if (choose != null) { 
-                var taglist:Array<String> = choose.tags.split(" ");
-                    
-                var finding = true;
-                while (finding == true)  {
-                    var fail = false;
-                    for (tag in taglist)
-                    {   
-                        var result:Int = blacklist.indexOf(tag);
-                        if (result >= 0) {
-                            fail = true;
-                            break;
-                        }
-                    } 
-
-                    if (!fail) {
-                        finding = false;
-                        //Main.sendMessage(choose.file_url, m.channel_id.id);
-                        m.edit({content:choose.file_url});
-                        //m.react();
-                        //m.react();
-                    }
-                    else {
-                        if (++r < jlist.count) {
-                            choose = jlist.posts[r];
-                            taglist = choose.tags.split(" ");
-                        } else {
-                            finding = false;
-                            //Main.sendMessage(, m.channel_id.id);
-                            m.edit({content:"игра не состоится..."});
-                        }
-                    }
-                }         
-            } 
-        }
-        rget.request();
-    }
 
     @Command
     public static function play(m:Message) {
@@ -103,8 +49,6 @@ class Main {
 
                 tg.result = itog;
                 tg.messageId = gm.id.id;
-
-                trace(trapGames.get(m.author.id.id));
 
                 rget.onData = function (data:String) {  
                     var jlist:GFile = Json.parse(data); 
