@@ -52,57 +52,36 @@ class Main {
 
                 rget.onData = function (data:String) {  
                     var jlist:GFile = Json.parse(data); 
-                    var blacklist:Array<String> = R34.blackList;
-
                     var r = Math.ceil(Std.random(jlist.count));
                     var choose = jlist.posts[r];
                             
                     if (choose != null) { 
-                        var taglist:Array<String> = choose.tags.split(" ");
-                            
-                        var finding = true;
-                        while (finding == true)  {
-                            var fail = false;
-                            for (tag in taglist)
-                            {   
-                                var result:Int = blacklist.indexOf(tag);
-                                if (result >= 0) {
-                                    fail = true;
-                                    break;
-                                }
-                            } 
-                            
-                            if (!fail) {
-                                finding = false;
-                                gm.edit({embed: {image: {url: choose.file_url}}});
-                                gm.react("♂️");
-                                gm.react("♀️");
+                        gm.edit({embed: {image: {url: choose.file_url} ,author: {icon_url: m.author.avatarUrl, name: m.author.username }}});
+                        gm.react("♂️");
+                        gm.react("♀️");
                                 
-                                var timer = new Timer(1000*30);
-                                tg.t = timer;
-                                timer.run = function() {
-                                    gm.edit({embed:{title: "время вышло"}});
-                                    trapGames.remove(m.author.id.id);
-                                    timer.stop();
-                                }
-                            }
-                            else {
-                                if (++r < jlist.count) {
-                                    choose = jlist.posts[r];
-                                    taglist = choose.tags.split(" ");
-                                } else {
-                                    finding = false;
-                                    m.edit({embed:{title: "игра не состоится"}});
-                                    trapGames.remove(m.author.id.id);
-                                }
-                            }
-                        }         
-                    } 
+                        var timer = new Timer(1000*30);
+                        tg.t = timer;
+                        timer.run = function() {
+                            gm.edit({embed:{title: "время вышло", author: {icon_url: m.author.avatarUrl, name: m.author.username }}});
+                            trapGames.remove(m.author.id.id);
+                            timer.stop();
+                        }     
+                    } else {
+                        gm.edit({embed:{title: "игра не состоится", author: {icon_url: m.author.avatarUrl, name: m.author.username }}});
+                        trapGames.remove(m.author.id.id);
+                    }
                 }
+
+                rget.onError = function (error) {
+                    gm.edit({embed:{title: "игра не состоится", author: {icon_url: m.author.avatarUrl, name: m.author.username }}});
+                    trapGames.remove(m.author.id.id);
+                }
+
                 rget.request();
             };
 
-            m.reply({embed:{title: "подготовка"}}, tgf);
+            m.reply({embed:{title: "подготовка", author: {icon_url: m.author.avatarUrl, name: m.author.username }}}, tgf);
         }
     }
 
@@ -248,11 +227,11 @@ class Main {
             if (tg.messageId == m.id.id) {
                 if (e.name == "♂️" || e.name == "♀️") {
                     if (e.name == "♀️" && tg.result == 0) {
-                        m.edit({embed: {title: "ВЕРНО!"}});
+                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }}});
                     } else if (e.name == "♂️" && tg.result == 1) {
-                        m.edit({embed: {title: "ВЕРНО!"}});
+                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }}});
                     } else {
-                        m.edit({embed: {title: "НЕТ!"}});
+                        m.edit({embed: {title: "НЕТ!", author: {icon_url: u.avatarUrl, name: u.username }}});
                     }
                     tg.t.stop();
                     trapGames.remove(u.id.id);
