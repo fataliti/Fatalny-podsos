@@ -1,10 +1,12 @@
+import com.raidandfade.haxicord.types.structs.MessageStruct;
+import com.raidandfade.haxicord.types.structs.Emoji;
 import com.raidandfade.haxicord.types.structs.Status;
 import com.raidandfade.haxicord.types.structs.Embed;
 import com.raidandfade.haxicord.endpoints.Typedefs.MessageCreate;
 import com.raidandfade.haxicord.endpoints.Endpoints;
 import com.raidandfade.haxicord.types.Message;
+import com.raidandfade.haxicord.types.User;
 import com.raidandfade.haxicord.DiscordClient;
-
 
 import haxe.Http;
 import haxe.Json;
@@ -14,7 +16,7 @@ import haxe.rtti.Meta;
 import sys.FileSystem;
 import sys.io.File;
 
-
+typedef  Trapgame = {var ?result:Int; var ?messageId:String; var ?t:Timer;}
 class Main {
     static var bot:DiscordClient;
     static var pref:String  = "!";
@@ -23,12 +25,152 @@ class Main {
 
     static var rssLink:String;
     static var rssPage:Int;
-    
+
+    static var trapGames:Map<String,Trapgame> = new Map<String,Trapgame>();
+
+    public static function trapGame(m:Message, e:ErrorReport) : Void {
+        trace(m.id);
+        var gameLinks = [
+            "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=1girl+rating:safe+small_breasts+solo&page=" + Std.string(Std.random(200)),
+            "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=trap+solo+rating:safe&page=" + Std.string(Std.random(90)),
+        ];
+
+        var itog = Std.random(gameLinks.length);
+        var find = gameLinks[itog];
+        var rget = new Http(find);
+
+        rget.onData = function (data:String) {  
+            var jlist:GFile = Json.parse(data); 
+            var blacklist:Array<String> = R34.blackList;
+
+            var r = Math.ceil(Std.random(jlist.count));
+            var choose = jlist.posts[r];
+                    
+            if (choose != null) { 
+                var taglist:Array<String> = choose.tags.split(" ");
+                    
+                var finding = true;
+                while (finding == true)  {
+                    var fail = false;
+                    for (tag in taglist)
+                    {   
+                        var result:Int = blacklist.indexOf(tag);
+                        if (result >= 0) {
+                            fail = true;
+                            break;
+                        }
+                    } 
+
+                    if (!fail) {
+                        finding = false;
+                        //Main.sendMessage(choose.file_url, m.channel_id.id);
+                        m.edit({content:choose.file_url});
+                        //m.react();
+                        //m.react();
+                    }
+                    else {
+                        if (++r < jlist.count) {
+                            choose = jlist.posts[r];
+                            taglist = choose.tags.split(" ");
+                        } else {
+                            finding = false;
+                            //Main.sendMessage(, m.channel_id.id);
+                            m.edit({content:"игра не состоится..."});
+                        }
+                    }
+                }         
+            } 
+        }
+        rget.request();
+    }
+
+    @Command
+    public static function play(m:Message) {
+        if (!trapGames.exists(m.author.id.id)) {
+            var tg:Trapgame = {};
+            trapGames.set(m.author.id.id, tg);
+
+            var tgf = function (gm:Message, e:ErrorReport) {
+
+                var gameLinks = [
+                    "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=1girl+rating:safe+small_breasts+solo&page=" + Std.string(Std.random(200)),
+                    "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=trap+solo+rating:safe&page=" + Std.string(Std.random(90)),
+                ];
+                
+                var itog = Std.random(gameLinks.length);
+                var find = gameLinks[itog];
+                var rget = new Http(find);
+
+                tg.result = itog;
+                tg.messageId = gm.id.id;
+
+                trace(trapGames.get(m.author.id.id));
+
+                rget.onData = function (data:String) {  
+                    var jlist:GFile = Json.parse(data); 
+                    var blacklist:Array<String> = R34.blackList;
+
+                    var r = Math.ceil(Std.random(jlist.count));
+                    var choose = jlist.posts[r];
+                            
+                    if (choose != null) { 
+                        var taglist:Array<String> = choose.tags.split(" ");
+                            
+                        var finding = true;
+                        while (finding == true)  {
+                            var fail = false;
+                            for (tag in taglist)
+                            {   
+                                var result:Int = blacklist.indexOf(tag);
+                                if (result >= 0) {
+                                    fail = true;
+                                    break;
+                                }
+                            } 
+                            
+                            if (!fail) {
+                                finding = false;
+                                gm.edit({embed: {image: {url: choose.file_url}}});
+                                gm.react("♂️");
+                                gm.react("♀️");
+                                
+                                var timer = new Timer(1000*30);
+                                tg.t = timer;
+                                timer.run = function() {
+                                    gm.edit({embed:{title: "время вышло"}});
+                                    trapGames.remove(m.author.id.id);
+                                    timer.stop();
+                                }
+                            }
+                            else {
+                                if (++r < jlist.count) {
+                                    choose = jlist.posts[r];
+                                    taglist = choose.tags.split(" ");
+                                } else {
+                                    finding = false;
+                                    m.edit({embed:{title: "игра не состоится"}});
+                                    trapGames.remove(m.author.id.id);
+                                }
+                            }
+                        }         
+                    } 
+                }
+                rget.request();
+            };
+
+            m.reply({embed:{title: "подготовка"}}, tgf);
+        }
+    }
+
+
     static function main() {
         bot = new DiscordClient(token);
         bot.onMessage = onMessage;
         bot.onReady = onReady;
+        bot.onReactionAdd = onReactionAdd;
+
         bot.ws.onClose = onClose;
+
 
         if (FileSystem.exists("mlist.txt")) {
             var mt = File.getContent("mlist.txt");
@@ -152,6 +294,25 @@ class Main {
             var c = commandList.indexOf(command);
             if (c >= 0) {
                 Reflect.callMethod(Main, Reflect.field(Main,commandList[c]),[m, words]);
+            }
+        }
+    }
+
+    public static function onReactionAdd(m:Message, u:User, e:Emoji) {
+        if (trapGames.exists(u.id.id)) {
+            var tg = trapGames.get(u.id.id);
+            if (tg.messageId == m.id.id) {
+                if (e.name == "♂️" || e.name == "♀️") {
+                    if (e.name == "♀️" && tg.result == 0) {
+                        m.edit({embed: {title: "ВЕРНО!"}});
+                    } else if (e.name == "♂️" && tg.result == 1) {
+                        m.edit({embed: {title: "ВЕРНО!"}});
+                    } else {
+                        m.edit({embed: {title: "НЕТ!"}});
+                    }
+                    tg.t.stop();
+                    trapGames.remove(u.id.id);
+                }
             }
         }
     }
@@ -321,6 +482,8 @@ class Main {
         rget.request();
     }
 
+
+
     @Command
     public static function info(m:Message) {
         var aut:EmbedAuthor = {
@@ -348,6 +511,11 @@ class Main {
             value: "аналогично команде g, но без черного списка, однако результат будет под спойлером. в лс спойлеров не будет",      
         };
         
+        var ft:EmbedField = {
+            name: "trap",
+            value: "игра в которой вам надо угадать мальчик перед вами ии девочка(BETA TEST)",      
+        };
+
         var f3:EmbedField = {
             name: "rlist",
             value: "черный список тегов"
@@ -355,7 +523,7 @@ class Main {
 
         var embed:Embed = {
             author: aut,
-            fields: [f1,f2,f11,f21,f3],
+            fields: [f1,f2,f11,f21,ft,f3],
             color: 0,
         };
     
