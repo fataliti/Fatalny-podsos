@@ -1,3 +1,5 @@
+import com.raidandfade.haxicord.utils.DPERMS;
+import com.raidandfade.haxicord.types.Guild;
 import com.raidandfade.haxicord.types.structs.MessageStruct;
 import com.raidandfade.haxicord.types.structs.Emoji;
 import com.raidandfade.haxicord.types.structs.Status;
@@ -16,19 +18,220 @@ import haxe.rtti.Meta;
 import sys.FileSystem;
 import sys.io.File;
 
-typedef  Trapgame = {var ?result:Int; var ?messageId:String; var ?t:Timer;}
+
 class Main {
     static var bot:DiscordClient;
     static var pref:String  = "!";
     static var token:String = "NjY2Mjk5MTM0NTc5NDQxNjY0.Xm3FkQ.qgW0_zAC3yrjBBEerfd3KFo3Vmo"; 
     static var commandList:Array<String> = [];
+    static var subList:Array<String> = [];
 
     static var rssLink:String;
     static var rssPage:Int;
 
     static var trapGames:Map<String,Trapgame> = new Map<String,Trapgame>();
+    
+    static var stat:Stat;
+
+    static function main() {
+        bot = new DiscordClient(token);
+        bot.onMessage = onMessage;
+        bot.onReady = onReady;
+        bot.onReactionAdd = onReactionAdd;
+
+        bot.ws.onClose = onClose;
 
 
+        stat = {reqvLS: 0, reqvSV: 0};
+        if (FileSystem.exists("stat.txt")) {
+            var fs = File.getContent("stat.txt");
+            stat = Json.parse(fs);
+        }
+
+        if (FileSystem.exists("mlist.txt")) {
+            var mt = File.getContent("mlist.txt");
+            var mj:Array<String> = Json.parse(mt);
+            for(tag in mj) {
+                if (R34.blackList.indexOf(tag) == -1) {
+                    R34.blackList.push(tag);
+                }
+            }
+        }
+
+        if (FileSystem.exists("rss.txt")) {
+            var rt = File.getContent("rss.txt");
+            var rj:RSSFile = Json.parse(rt);
+            rssLink = rj.tags;
+            rssPage = rj.page;
+
+            if (rj.chans != null)
+                for(ch in rj.chans)
+                    subList.push(ch);
+        } else {
+            rssLink = "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=score:20+1girl&page=";
+            rssPage = 200;
+        }
+
+        var statics = Meta.getStatics(Main);
+        for(s in Reflect.fields(statics)) {
+            commandList.push(s);
+        }
+
+        trace("all ready");
+    }
+
+    public static function onReady() {
+        trace('invite link: ${bot.getInviteLink()}');
+
+        var a:Activity = {
+            name: "!info",
+            type: 0,
+        };
+        var s:Status = {
+            game: a,
+            afk: false,
+            status: "online",
+        };
+
+        bot.setStatus(s);
+
+        var timer:Timer = new Timer(60 * 1000 * 10);
+        timer.run = function() 
+        {   
+            //var animeChan = "638490021678284820";
+            var page = Std.random(rssPage);
+            var find = rssLink+Std.string(page);
+            var rget = new Http(find);
+            
+            rget.onData = function (data:String) {  
+                var jlist:GFile = Json.parse(data); 
+                var blacklist:Array<String> = R34.blackList;
+
+                var r = Math.ceil(Std.random(jlist.count));
+                var choose = jlist.posts[r];
+                        
+                if (choose != null) { 
+                    var taglist:Array<String> = choose.tags.split(" ");
+                        
+                    var finding = true;
+                    while (finding == true)  {
+                        var fail = false;
+                        for (tag in taglist)
+                        {   
+                            var result:Int = blacklist.indexOf(tag);
+                            if (result >= 0) {
+                                fail = true;
+                                break;
+                            }
+                        } 
+
+                        if (!fail) {
+                            finding = false;
+                            //Main.sendMessage(choose.file_url, animeChan);
+
+                            for(chan in subList) 
+                                sendMessage(choose.file_url, chan);
+                        }
+                        else {
+                            if (++r < jlist.count) {
+                                choose = jlist.posts[r];
+                                taglist = choose.tags.split(" ");
+                            } else {
+                                finding = false;
+                            }
+                        }
+                    }         
+                } 
+            }
+            rget.request();
+        }  
+    }
+    
+    public static function onClose(c:Int) {
+        var j = Json.stringify(R34.blackList);
+        File.saveContent("mlist.txt", j);
+
+        var rs:RSSFile = {tags:rssLink, page:rssPage, chans:subList,};
+        var rj = Json.stringify(rs);
+        File.saveContent("rss.txt",rj);
+
+        var sj = Json.stringify(stat);
+        File.saveContent("stat.txt", sj);
+
+        trace("ya ypal");
+        Sys.exit(228);
+    }
+
+    public static function sendMessage(text:String, channleId:String) {
+        var msg:MessageCreate = {
+            content: text
+        };
+        var end = new Endpoints(bot);
+        end.sendMessage(channleId, msg);
+    }
+
+    public static function onMessage(m:Message) {
+        if (StringTools.startsWith(m.content, pref)) {
+
+            if (m.inGuild())
+                stat.reqvSV++;
+            else 
+                stat.reqvLS++;
+
+            var words:Array<String> = m.content.split(" ");
+
+            var command = words.shift();
+            command = StringTools.replace(command, pref, "");
+            
+            var c = commandList.indexOf(command);
+            if (c >= 0) {
+                Reflect.callMethod(Main, Reflect.field(Main,commandList[c]),[m, words]);
+            }
+        }
+    }
+
+    public static function onReactionAdd(m:Message, u:User, e:Emoji) {
+        if (trapGames.exists(u.id.id)) {
+            var tg = trapGames.get(u.id.id);
+            if (tg.messageId == m.id.id) {
+                if (e.name == "♂️" || e.name == "♀️") {
+                    if (e.name == "♀️" && tg.result == 0) {
+                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }}});
+                    } else if (e.name == "♂️" && tg.result == 1) {
+                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }}});
+                    } else {
+                        m.edit({embed: {title: "НЕТ!", author: {icon_url: u.avatarUrl, name: u.username }}});
+                    }
+                    tg.t.stop();
+                    trapGames.remove(u.id.id);
+                }
+            }
+        }
+    }   
+
+    @Command
+    public static function sub(m:Message) {
+        if (!m.inGuild()){
+            m.reply({content: "не работает в лс"});
+        } else  {
+            if (m.hasPermission(DPERMS.ADMINISTRATOR)) {
+                if (subList.indexOf(m.channel_id.id) == -1){
+                    m.reply({content: "канал подписался на рассылку"});
+                    subList.push(m.channel_id.id);
+                } else {
+                    m.reply({content: "канал отписался от рассылки"});
+                    subList.remove(m.channel_id.id);
+                }
+            } else {
+                m.reply({content: "у тебя не достаточно прав для этой команды"});
+            }
+        }
+    }
+
+    @Command
+    public static function sub_info(m:Message) {
+        sendMessage('автопост по ссылке `$rssLink[random($rssPage)]`', m.channel_id.id);
+    }
 
     @Command
     public static function play(m:Message) {
@@ -82,161 +285,6 @@ class Main {
             };
 
             m.reply({embed:{title: "подготовка", author: {icon_url: m.author.avatarUrl, name: m.author.username }}}, tgf);
-        }
-    }
-
-
-    static function main() {
-        bot = new DiscordClient(token);
-        bot.onMessage = onMessage;
-        bot.onReady = onReady;
-        bot.onReactionAdd = onReactionAdd;
-
-        bot.ws.onClose = onClose;
-
-
-        if (FileSystem.exists("mlist.txt")) {
-            var mt = File.getContent("mlist.txt");
-            var mj:Array<String> = Json.parse(mt);
-            for(tag in mj) {
-                if (R34.blackList.indexOf(tag) == -1) {
-                    R34.blackList.push(tag);
-                }
-            }
-        }
-
-        if (FileSystem.exists("rss.txt")) {
-            var rt = File.getContent("rss.txt");
-            var rj:RSSFile = Json.parse(rt);
-            rssLink = rj.tags;
-            rssPage = rj.page;
-        } else {
-            rssLink = "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=score:20+1girl&page=";
-            rssPage = 200;
-        }
-
-        var statics = Meta.getStatics(Main);
-        for(s in Reflect.fields(statics)) {
-            commandList.push(s);
-        }
-
-        trace("all ready");
-    }
-
-    public static function onReady() {
-        trace('invite link: ${bot.getInviteLink()}');
-
-        var a:Activity = {
-            name: "!info",
-            type: 0,
-        };
-        var s:Status = {
-            game: a,
-            afk: false,
-            status: "online",
-        };
-
-        bot.setStatus(s);
-
-        var timer:Timer = new Timer(60 * 1000 * 10);
-        timer.run = function() 
-        {   
-            var animeChan = "638490021678284820";
-            var page = Std.random(rssPage);
-            var find = rssLink+Std.string(page);
-            var rget = new Http(find);
-            
-            rget.onData = function (data:String) {  
-                var jlist:GFile = Json.parse(data); 
-                var blacklist:Array<String> = R34.blackList;
-
-                var r = Math.ceil(Std.random(jlist.count));
-                var choose = jlist.posts[r];
-                        
-                if (choose != null) { 
-                    var taglist:Array<String> = choose.tags.split(" ");
-                        
-                    var finding = true;
-                    while (finding == true)  {
-                        var fail = false;
-                        for (tag in taglist)
-                        {   
-                            var result:Int = blacklist.indexOf(tag);
-                            if (result >= 0) {
-                                fail = true;
-                                break;
-                            }
-                        } 
-
-                        if (!fail) {
-                            finding = false;
-                            Main.sendMessage(choose.file_url, animeChan);
-                        }
-                        else {
-                            if (++r < jlist.count) {
-                                choose = jlist.posts[r];
-                                taglist = choose.tags.split(" ");
-                            } else {
-                                finding = false;
-                            }
-                        }
-                    }         
-                } 
-            }
-            rget.request();
-        }  
-    }
-    
-    public static function onClose(c:Int) {
-        var j = Json.stringify(R34.blackList);
-        File.saveContent("mlist.txt", j);
-
-        var rs:RSSFile = {tags:rssLink, page:rssPage};
-        var rj = Json.stringify(rs);
-        File.saveContent("rss.txt",rj);
-
-        trace("ya ypal");
-        Sys.exit(228);
-    }
-
-    public static function sendMessage(text:String, channleId:String) {
-        var msg:MessageCreate = {
-            content: text
-        };
-        var end = new Endpoints(bot);
-        end.sendMessage(channleId, msg);
-    }
-
-    public static function onMessage(m:Message) {
-        if (StringTools.startsWith(m.content, pref)) {
-            var words:Array<String> = m.content.split(" ");
-
-            var command = words.shift();
-            command = StringTools.replace(command, pref, "");
-            
-            var c = commandList.indexOf(command);
-            if (c >= 0) {
-                Reflect.callMethod(Main, Reflect.field(Main,commandList[c]),[m, words]);
-            }
-        }
-    }
-
-    public static function onReactionAdd(m:Message, u:User, e:Emoji) {
-        if (trapGames.exists(u.id.id)) {
-            var tg = trapGames.get(u.id.id);
-            if (tg.messageId == m.id.id) {
-                if (e.name == "♂️" || e.name == "♀️") {
-                    if (e.name == "♀️" && tg.result == 0) {
-                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }}});
-                    } else if (e.name == "♂️" && tg.result == 1) {
-                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }}});
-                    } else {
-                        m.edit({embed: {title: "НЕТ!", author: {icon_url: u.avatarUrl, name: u.username }}});
-                    }
-                    tg.t.stop();
-                    trapGames.remove(u.id.id);
-                }
-            }
         }
     }
 
@@ -321,7 +369,6 @@ class Main {
     public static function rlist(m:Message) {
         sendMessage(R34.blackList.toString(), m.channel_id.id);
     }
-
     
     @Command 
     public static function g(m:Message, words:Array<String>) {
@@ -405,8 +452,6 @@ class Main {
         rget.request();
     }
 
-
-
     @Command
     public static function info(m:Message) {
         var aut:EmbedAuthor = {
@@ -436,7 +481,17 @@ class Main {
         
         var ft:EmbedField = {
             name: "trap",
-            value: "игра в которой вам надо угадать мальчик перед вами ии девочка(BETA TEST)",      
+            value: "игра в которой вам нужно угадать мальчик перед вами ии девочка",      
+        };
+
+        var s:EmbedField = {
+            name: "sub",
+            value: "возможность подписать текстовый канал на атвопостинг случайной картинки раз в 10 минут(так же отписаться). у вас должно быть право администора сервера. не работает в лс",      
+        };
+
+        var si:EmbedField = {
+            name: "sub_info",
+            value: "узнать что же может запоститься(осторожно JSON)",      
         };
 
         var f3:EmbedField = {
@@ -444,9 +499,14 @@ class Main {
             value: "черный список тегов"
         };
 
+        var inv:EmbedField = {
+            name: "invite",
+            value: "ссылка для приглашения бота к себе на сервер"
+        };
+
         var embed:Embed = {
             author: aut,
-            fields: [f1,f2,f11,f21,ft,f3],
+            fields: [f1,f2,f11,f21,ft,s,si,f3,inv],
             color: 0,
         };
     
@@ -456,7 +516,6 @@ class Main {
         var end = new Endpoints(bot);
         end.sendMessage(m.channel_id.id, msg);
     }
-   
 
     @Command 
     public static function status(m:Message, words:Array<String>) {
@@ -502,7 +561,6 @@ class Main {
         }
     }
 
-
     @Command
     public static function rss_link(m:Message, words:Array<String>) {
         if (m.getMember().user.id.id != "371690693233737740")
@@ -517,13 +575,27 @@ class Main {
         rssPage = Std.parseInt(words.shift());
         sendMessage('автопост из `$rssPage` страниц', m.channel_id.id);
     }
+    
     @Command
-    public static function rss_info(m:Message) {
-        sendMessage('автопост по ссылке `$rssLink$rssPage`', m.channel_id.id);
+    public  static function invite(m:Message) {
+        m.reply({content: "ссылка для приглашения бота: "+ bot.getInviteLink()});
     }
 
+    
+    @Command
+    public static function g__(m:Message) {
+        var glam = function(guilds:Array<Guild>, e:ErrorReport) {
+            m.reply({content: Std.string(guilds.length) + ' серверов - ${stat.reqvLS} запросов в лс ${stat.reqvSV} запросов на серверах'});
+        }
+        bot.getGuilds({}, glam);
+    }
+    
 }
 
+typedef Stat = {
+    var ?reqvLS:Int;
+    var ?reqvSV:Int;
+}
 
 typedef RFile = {
     var score:String;
@@ -541,6 +613,13 @@ typedef GFile = {
 typedef RSSFile = {
     var page:Int;
     var tags:String;
+    var chans:Array<String>;
+}
+
+typedef  Trapgame = {
+    var ?result:Int; 
+    var ?messageId:String; 
+    var ?t:Timer;
 }
 
 class R34 {
