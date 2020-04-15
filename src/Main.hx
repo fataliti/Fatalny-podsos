@@ -19,6 +19,8 @@ import sys.FileSystem;
 import sys.io.File;
 
 
+//var animeChan = "638490021678284820";
+
 class Main {
     static var bot:DiscordClient;
     static var pref:String  = "!";
@@ -95,10 +97,9 @@ class Main {
 
         bot.setStatus(s);
 
-        var timer:Timer = new Timer(60 * 1000 * 10);
+        var timer:Timer = new Timer(60 * 1000 * 15);
         timer.run = function() 
         {   
-            //var animeChan = "638490021678284820";
             var page = Std.random(rssPage);
             var find = rssLink+Std.string(page);
             var rget = new Http(find);
@@ -623,32 +624,5 @@ typedef  Trapgame = {
 }
 
 class R34 {
-    public static var blackList:Array<String> = [
-        "futanari",
-        "big_belly",
-        "rimming",
-        "hyper",
-        "inflation",
-        "lactating",
-        "male/male",
-        "male_on_feral",
-        "pooping",
-        "score:0",
-        "urine",
-        "belly_hair",
-        "chest_hair",
-        "slightly_chubby",
-        "overweight",
-        "big_muscles",
-        "human_penetrating_feral",
-        "dickgirl",
-        "1futa",
-        "gay",
-        "yaoi",
-        "cyclops",
-        "chubby",
-        "feral",
-        "anthro",
-        "girly",
-    ];
+    public static var blackList:Array<String> = [];
 }
