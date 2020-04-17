@@ -21,11 +21,12 @@ import sys.FileSystem;
 import sys.io.File;
 
 
-//var animeChan = "638490021678284820";
+
 
 class Main {
 
     static var testChan = "651671385566871575";
+    static var animeChan = "638490021678284820";
 
     static var bot:DiscordClient;
     static var pref:String  = "!";
@@ -656,7 +657,7 @@ class Main {
                     break;
                 }
                 var end = new Endpoints(bot);
-                end.sendMessage(testChan, msg);
+                end.sendMessage(animeChan, msg);
             }
             guidMax = _guidMax;
         }
