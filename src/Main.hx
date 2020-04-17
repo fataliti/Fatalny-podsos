@@ -1,6 +1,8 @@
+import haxe.xml.Parser;
+import haxe.xml.Access;
+
 import com.raidandfade.haxicord.utils.DPERMS;
 import com.raidandfade.haxicord.types.Guild;
-import com.raidandfade.haxicord.types.structs.MessageStruct;
 import com.raidandfade.haxicord.types.structs.Emoji;
 import com.raidandfade.haxicord.types.structs.Status;
 import com.raidandfade.haxicord.types.structs.Embed;
@@ -22,6 +24,9 @@ import sys.io.File;
 //var animeChan = "638490021678284820";
 
 class Main {
+
+    static var testChan = "651671385566871575";
+
     static var bot:DiscordClient;
     static var pref:String  = "!";
     static var token:String = "NjY2Mjk5MTM0NTc5NDQxNjY0.Xm3FkQ.qgW0_zAC3yrjBBEerfd3KFo3Vmo"; 
@@ -35,15 +40,11 @@ class Main {
     
     static var stat:Stat;
 
+    static var guidMax:Int = 0;
+
     static function main() {
         bot = new DiscordClient(token);
-        bot.onMessage = onMessage;
-        bot.onReady = onReady;
-        bot.onReactionAdd = onReactionAdd;
-
-        bot.ws.onClose = onClose;
-
-
+        
         stat = {reqvLS: 0, reqvSV: 0};
         if (FileSystem.exists("stat.txt")) {
             var fs = File.getContent("stat.txt");
@@ -65,6 +66,7 @@ class Main {
             var rj:RSSFile = Json.parse(rt);
             rssLink = rj.tags;
             rssPage = rj.page;
+            guidMax = rj._guidMax;
 
             if (rj.chans != null)
                 for(ch in rj.chans)
@@ -74,11 +76,17 @@ class Main {
             rssPage = 200;
         }
 
+        trace(guidMax);
+
         var statics = Meta.getStatics(Main);
         for(s in Reflect.fields(statics)) {
             commandList.push(s);
         }
 
+        bot.onMessage = onMessage;
+        bot.onReady = onReady;
+        bot.onReactionAdd = onReactionAdd;
+        bot.ws.onClose = onClose;
         trace("all ready");
     }
 
@@ -97,7 +105,7 @@ class Main {
 
         bot.setStatus(s);
 
-        var timer:Timer = new Timer(60 * 1000 * 15);
+        var timer = new Timer(60 * 1000 * 15);
         timer.run = function() 
         {   
             var page = Std.random(rssPage);
@@ -146,13 +154,36 @@ class Main {
             }
             rget.request();
         }  
+
+
+        var shikitimer = new Timer(60 * 1000 * 5);
+        shikitimer.run = function() {
+            news();
+        }
+
+
+        if (guidMax == 0) {
+            var rget = new Http("https://shikimori.one/forum/news.rss");
+            rget.onData = function(data:String) {
+                var xm = Parser.parse(data);
+                var acc = new Access(xm.firstElement());
+                var ch = acc.node.channel;
+                var g = ch.node.item.node.guid.innerData;
+                g = StringTools.replace(g,"entry-","");
+                var guid = Std.parseInt(g);
+                guidMax = guid; 
+                trace("new guid get " + guidMax);
+            }
+            rget.request();
+        }
+        
     }
     
     public static function onClose(c:Int) {
         var j = Json.stringify(R34.blackList);
         File.saveContent("mlist.txt", j);
 
-        var rs:RSSFile = {tags:rssLink, page:rssPage, chans:subList,};
+        var rs:RSSFile = {tags:rssLink, page:rssPage, chans:subList, _guidMax: guidMax};
         var rj = Json.stringify(rs);
         File.saveContent("rss.txt",rj);
 
@@ -582,7 +613,6 @@ class Main {
         m.reply({content: "ссылка для приглашения бота: "+ bot.getInviteLink()});
     }
 
-    
     @Command
     public static function g__(m:Message) {
         var glam = function(guilds:Array<Guild>, e:ErrorReport) {
@@ -591,6 +621,48 @@ class Main {
         bot.getGuilds({}, glam);
     }
     
+
+    public static function news() {
+        var rget = new Http("https://shikimori.one/forum/news.rss");
+
+        rget.onData = function(data:String) {
+            var xm = Parser.parse(data);
+            var acc = new Access(xm.firstElement());
+            var ch = acc.node.channel;
+            var _guidMax = guidMax;
+            for(it in ch.nodes.item) {
+                var aut:EmbedAuthor = {
+                    name: "Шикимори RSS",
+                    icon_url: "https://sun9-8.userapi.com/c858528/v858528133/103c37/vRt_i6Mp1_k.jpg?ava=1",
+                }
+                var embed:Embed = {
+                    title: it.node.title.innerData,
+                    url: it.node.link.innerData,
+                    author: aut,
+                };
+                var msg:MessageCreate = {
+                    embed: embed,
+                };
+
+                var g = it.node.guid.innerData;
+                g = StringTools.replace(g,"entry-","");
+                var guid = Std.parseInt(g);
+
+                if (_guidMax < guid) {
+                    _guidMax = guid;
+                }
+
+                if (guidMax == guid) {
+                    break;
+                }
+                var end = new Endpoints(bot);
+                end.sendMessage(testChan, msg);
+            }
+            guidMax = _guidMax;
+        }
+        rget.request();
+    }
+
 }
 
 typedef Stat = {
@@ -615,6 +687,7 @@ typedef RSSFile = {
     var page:Int;
     var tags:String;
     var chans:Array<String>;
+    var ?_guidMax:Int;
 }
 
 typedef  Trapgame = {
