@@ -205,19 +205,15 @@ class Main {
 
     public static function onMessage(m:Message) {
         if (StringTools.startsWith(m.content, pref)) {
-
-            if (m.inGuild())
-                stat.reqvSV++;
-            else 
-                stat.reqvLS++;
-
             var words:Array<String> = m.content.split(" ");
-
             var command = words.shift();
             command = StringTools.replace(command, pref, "");
-            
             var c = commandList.indexOf(command);
             if (c >= 0) {
+                if (m.inGuild())
+                    stat.reqvSV++;
+                else 
+                    stat.reqvLS++;
                 Reflect.callMethod(Main, Reflect.field(Main,commandList[c]),[m, words]);
             }
         }

@@ -1,16 +1,7 @@
 -cp src
 -lib haxicord
--main Main
+-lib compiletime
+-main Bot
 
 
-#-lib nme
-#-lib hxnodejs
-#-debug
-#-js bin/js/Haxicord.js
-
-
-#-net-lib libs/websocket-sharp.dll
-#-cs bin/Haxicord-cs
-#-D net-ver=40
-
--cpp bin/Haxicord-cpp
+-cpp bin/bot_windows_cpp
