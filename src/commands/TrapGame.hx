@@ -13,8 +13,8 @@ class TrapGame {
 
     static var trapGames:Map<String,TrapgameType> = new Map();
 
-    @command(["play","trap", "Игра в которой вам нужно угадать мальчик перед вами или девочка"])
-    public static function play(m:Message) {
+    @command(["play","trap"], "Игра в которой вам нужно угадать мальчик перед вами или девочка")
+    public static function trap(m:Message) {
         if (!trapGames.exists(m.author.id.id)) {
             var tg:TrapgameType = {};
             trapGames.set(m.author.id.id, tg);

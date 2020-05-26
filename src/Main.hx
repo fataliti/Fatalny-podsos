@@ -542,6 +542,7 @@ class Main {
         var msg:MessageCreate = {
             embed: embed,
         };
+
         var end = new Endpoints(bot);
         end.sendMessage(m.channel_id.id, msg);
     }

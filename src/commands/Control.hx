@@ -3,7 +3,8 @@ package commands;
 import com.raidandfade.haxicord.types.Message;
 
 class Control {
-    @command(["kill", "restart"],"Перезапуск бота")
+
+    @command(["kill"],"Выключить бота", "Нужно быть fataliti бота")
     public static function kill(m:Message) {
         if (m.getMember().user.id.id != "371690693233737740")
             return;

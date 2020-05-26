@@ -8,12 +8,11 @@ class OnMessage {
         if (StringTools.startsWith(m.content, Bot.prefix)) {
             var words:Array<String> = m.content.split(" ");
             words = words.filter(function (w){ return (w.length > 0);});
-            trace(words);
+
             var comName = words.shift();
             comName = StringTools.replace(comName, Bot.prefix, "");
             if (Bot.commandMap.exists(comName)) {
                 var command:Bot.Command = Bot.commandMap.get(comName);
-                trace("Called " +command);
                 Reflect.callMethod(command._class, Reflect.field(command._class,command.command),[m, words]);
 
                 var comStat = Statistic.statCommand.filter((c) -> c.name == command.command)[0];
@@ -40,11 +39,8 @@ class OnMessage {
                         }
                         Statistic.statServers.push(_servStat);
                     }
-                    
-                }
-                else 
+                } else 
                     Statistic.statCommon.reqvDm++;
-                
             }
         }
     }

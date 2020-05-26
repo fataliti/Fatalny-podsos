@@ -7,8 +7,8 @@ import com.raidandfade.haxicord.types.Message;
 
 class Rule34 {
     
-    @command(["r","rule","r34"], "Запрос картинки от Rule34 с использованием черного листа")
-    public static function r(m:Message, words:Array<String>) {
+    @command(["r","rule","r34"], "Запрос картинки от Rule34 с использованием черного листа","теги(опционально)")
+    public static function r34(m:Message, words:Array<String>) {
         var find = "https://r34-json-api.herokuapp.com/posts?tags=";
         for(w in words)
             find += "+" + w;
@@ -17,7 +17,7 @@ class Rule34 {
         rget.onData = function (data:String) {  
 
             var jlist:Array<Dynamic> = Json.parse(data); 
-            var blacklist:Array<String> = BlackList.blackLists.get(m.getGuild().id.id); 
+            var blacklist:Array<String> = BlackList.blackLists.get( m.inGuild() ? m.getGuild().id.id : m.author.id.id ); 
 
             var r = Math.ceil(Std.random(jlist.length));
             var choose:Rule34File = jlist[r];
@@ -65,8 +65,8 @@ class Rule34 {
     }
     
 
-    @command(["ra","rulea","rr", "r34a"], "Запрос картинки от Rule34 без использования черного листа")
-    public static function ra(m:Message, words:Array<String>) {
+    @command(["ra","rulea","rr", "r34a"], "Запрос картинки от Rule34 без использования черного листа","теги(опционально)")
+    public static function r34a(m:Message, words:Array<String>) {
         var find = "https://r34-json-api.herokuapp.com/posts?tags=";
         for(w in words)
             find += "+" + w;

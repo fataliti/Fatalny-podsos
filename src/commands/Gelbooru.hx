@@ -6,8 +6,8 @@ import haxe.Json;
 
 class Gelbooru {
 
-    @command(["g", "gelbooru"], "Запрос картинки от Gelbooru с использованием черного листа")
-    public static function g(m:Message, words:Array<String>) {
+    @command(["gelbooru", "g"], "Запрос картинки от Gelbooru с использованием черного листа", "теги(опционально)")
+    public static function gelbooru(m:Message, words:Array<String>) {
         var find = "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=";
         for(w in words)
             find += "+" + w;
@@ -16,7 +16,7 @@ class Gelbooru {
         rget.onData = function (data:String) {  
 
             var jlist:GelbooruFile = Json.parse(data); 
-            var blacklist = BlackList.blackLists.get(m.getGuild().id.id); 
+            var blacklist = BlackList.blackLists.get( m.inGuild() ? m.getGuild().id.id : m.author.id.id ); 
 
             var r = Math.ceil(Std.random(jlist.count));
             var choose = jlist.posts[r];
@@ -65,8 +65,8 @@ class Gelbooru {
         rget.request();
     }
 
-    @command(["gа", "gelboorua", "gg"], "Запрос картинки от Gelbooru без использования черного листа")
-    public static function ga(m:Message, words:Array<String>) {
+    @command(["gelboorua", "gg", "gа"], "Запрос картинки от Gelbooru без использования черного листа", "теги(опционально)")
+    public static function gelbooruAll(m:Message, words:Array<String>) {
         var find = "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=";
         for(w in words)
             find += "+" + w;
@@ -95,6 +95,24 @@ class Gelbooru {
         rget.request();
     }
 
+    @command(["gelbooruTotal", "gt"], "Количество постов на Gelbooru с указанными тегами", "теги(опционально)")
+    public static function gelbooruTotal(m:Message, words:Array<String>) {
+        var find = "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=";
+        for(w in words)
+            find += "+" + w;
+
+        var rget = new Http(find);
+        rget.onData = function (data:String) {  
+            var jlist:GelbooruFile = Json.parse(data); 
+            Tools.reply(m, 'По запросу **${words.join(" ")}** на Gelbooru есть **${jlist.total}** постов');
+        }
+
+        rget.onError = function(error) {
+            m.react("⚠️");
+        }
+
+        rget.request();
+    }
 
 }
 

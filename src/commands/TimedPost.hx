@@ -19,15 +19,15 @@ class TimedPost {
     public static function initialize() {
         if (FileSystem.exists("subList.txt")) {
             subList = Json.parse(File.getContent("subList.txt"));
-            trace(subList);
+            //trace(subList);
         }
-        var timer = new Timer(60 * 500 * 1);
+        var timer = new Timer(60 * 1000 * 15);
         timer.run = function() {
             
             for(sub in subList) {
 
                 var find = "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags="+sub.tags.join("+")+"&page="+Std.string(Std.random(sub.page));
-                trace(find);
+                //trace(find);
                 var rget = new Http(find);
                 
                 rget.onData = function (data:String) {  
@@ -43,14 +43,17 @@ class TimedPost {
                         var finding = true;
                         while (finding == true)  {
                             var fail = false;
-                            for (tag in taglist)
-                            {   
-                                var result:Int = blacklist.indexOf(tag);
-                                if (result >= 0) {
-                                    fail = true;
-                                    break;
-                                }
-                            } 
+
+                            if (blacklist != null) {
+                                for (tag in taglist)
+                                {   
+                                    var result:Int = blacklist.indexOf(tag);
+                                    if (result >= 0) {
+                                        fail = true;
+                                        break;
+                                    }
+                                } 
+                            }
 
                             if (!fail) {
                                 finding = false;
@@ -73,7 +76,7 @@ class TimedPost {
         }
     }
 
-    @command(["sub", "gsub"], "Подписать канал на автопост по заданным тегам с учетом черного списка тегов")
+    @command(["sub"], "Подписать канал на автопост по заданным тегам с учетом черного списка тегов", "теги(опционально) иначе самые нвые среди 20000 постов")
     public static function sub(m:Message, words:Array<String>) {
         if (!m.inGuild()) {
             Tools.reply(m, "Не работает в лс");
@@ -106,6 +109,9 @@ class TimedPost {
                     page: Math.floor(jlist.total / 100),
                     tags: words,
                 };
+
+                if (jlist.total > 20000) jlist.total = 20000;
+                if (sub.page > 200) sub.page = 200;
 
                 Tools.sendMessage('Автопост по запросу **${words}** из числа **${jlist.total}** вариантов, если не учитывать черный список', m.channel_id.id);
                 subList.push(sub);
@@ -149,7 +155,7 @@ class TimedPost {
 
         var filter = subList.filter((s) -> s.chanId == m.channel_id.id)[0];
         if (filter != null) {
-            Tools.sendMessage('канал подписан на теги **${filter.tags}** и есть около **${(filter.page+1)*100}** вариантов того что запостится', m.channel_id.id);
+            Tools.sendMessage('канал подписан на теги **${filter.tags}** и есть менее **${(filter.page)*100}** вариантов того что запостится', m.channel_id.id);
         } else {
             Tools.sendMessage("канал ни на что не подписан", m.channel_id.id);
         }

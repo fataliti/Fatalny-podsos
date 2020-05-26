@@ -25,3 +25,4 @@ typedef Command = {
     var _class:Class<Dynamic>;
     var command:String;
 }
+

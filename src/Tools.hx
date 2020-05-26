@@ -1,3 +1,4 @@
+import com.raidandfade.haxicord.types.structs.Embed;
 import com.raidandfade.haxicord.types.Message;
 import com.raidandfade.haxicord.endpoints.Typedefs.MessageCreate;
 import com.raidandfade.haxicord.endpoints.Endpoints;
@@ -13,6 +14,14 @@ class Tools {
         };
         var end = new Endpoints(Bot.bot);
         end.sendMessage(channleId, msg);
+    }
+
+    public static function sendEmbed(embed:Embed, channelId:String) {
+        var msg:MessageCreate = {
+            embed: embed,
+        }
+        var end = new Endpoints(Bot.bot);
+        end.sendMessage(channelId, msg);
     }
 
     public static function reply(m:Message, text:String) {
