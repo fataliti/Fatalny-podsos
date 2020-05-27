@@ -1,5 +1,8 @@
 package commands;
 
+import com.raidandfade.haxicord.endpoints.Endpoints;
+import com.raidandfade.haxicord.endpoints.Typedefs.MessageCreate;
+import com.raidandfade.haxicord.types.structs.Embed;
 import com.raidandfade.haxicord.types.Message;
 import haxe.Http;
 import haxe.Json;
@@ -41,7 +44,20 @@ class Gelbooru {
 
                     if (!fail) {
                         finding = false;
-                        Tools.sendMessage(choose.file_url, m.channel_id.id);
+
+                        if (StringTools.endsWith(choose.file_url,".webm")) {
+                            Tools.sendMessage('Score:${choose.score} Id:${choose.id} ${choose.file_url}', m.channel_id.id);
+                        } else {
+                            var embed:Embed = {
+                                image: {url: choose.file_url},
+                                title: "Gelbooru",
+                                url: "https://gelbooru.com/index.php?page=post&s=view&id="+choose.id,
+                                author: {name: "Score: " + choose.score, icon_url: "https://pbs.twimg.com/profile_images/1118350008003301381/3gG6lQMl.png"},
+                                color: 0x3333FF,
+                            }
+                            Tools.sendEmbed(embed, m.channel_id.id);
+                        }
+
                     }
                     else {
                         if (++r < jlist.count) {
@@ -79,10 +95,22 @@ class Gelbooru {
             var choose = jlist.posts[r];
                     
             if (choose != null) { 
-                if (m.inGuild())
-                    Tools.sendMessage("||"+choose.file_url+" ||", m.channel_id.id);
-                else 
-                    Tools.sendMessage(choose.file_url, m.channel_id.id);
+                if (m.inGuild()) {
+                    Tools.sendMessage('Score:${choose.score} Id:${choose.id} ||${choose.file_url} ||', m.channel_id.id);
+                } else {  
+                    if (StringTools.endsWith(choose.file_url,".webm")) {
+                        Tools.sendMessage('Score:${choose.score} Id:${choose.id} ${choose.file_url}', m.channel_id.id);
+                    } else {
+                        var embed:Embed = {
+                            image: {url: choose.file_url},
+                            title: "Gelbooru",
+                            url: "https://gelbooru.com/index.php?page=post&s=view&id="+choose.id,
+                            author: {name: "Score: " + choose.score, icon_url: "https://pbs.twimg.com/profile_images/1118350008003301381/3gG6lQMl.png"},
+                            color: 0x3333FF,
+                        }
+                        Tools.sendEmbed(embed, m.channel_id.id);
+                    }
+                }
             } else {
                 Tools.sendMessage("ничего не нашел", m.channel_id.id);
             }
@@ -104,7 +132,7 @@ class Gelbooru {
         var rget = new Http(find);
         rget.onData = function (data:String) {  
             var jlist:GelbooruFile = Json.parse(data); 
-            Tools.reply(m, 'По запросу **${words.join(" ")}** на Gelbooru есть **${jlist.total}** постов');
+            Tools.reply(m, 'По запросу **${words}** на Gelbooru есть **${jlist.total}** постов');
         }
 
         rget.onError = function(error) {
@@ -112,6 +140,16 @@ class Gelbooru {
         }
 
         rget.request();
+    }
+
+    @command(["glink","gl"], "Просто сделает ссылку на пост Gelbooru по Id", "Id(обязателен)")
+    public static function glink(m:Message, words:Array<String>) {
+        var id = words.shift();
+        if (id != null) {
+            Tools.reply(m, "https://gelbooru.com/index.php?page=post&s=view&id="+id);
+        } else {
+            Tools.reply(m, "Не указан Id");
+        }
     }
 
 }

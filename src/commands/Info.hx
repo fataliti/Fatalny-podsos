@@ -29,7 +29,7 @@ class Info {
         Tools.sendEmbed(embed, m.channel_id.id);
     }
 
-    @command(["info", "help"], "Помощь по командам","команда[оционально] (иначе выведет информацию по всем командам)")
+    @command(["info", "help"], "Показать все команды либо информацию о конкретной","команда[оционально] (иначе выведет информацию по всем командам)")
     public static function help(m:Message, words:Array<String>) {
 
         var shift = words.shift();

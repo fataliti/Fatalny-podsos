@@ -1,5 +1,6 @@
 package commands;
 
+import com.raidandfade.haxicord.types.structs.Embed;
 import haxe.Http;
 import haxe.Json;
 
@@ -40,7 +41,21 @@ class Rule34 {
                     if (!fail) {
                         finding = false;
                         var nm = StringTools.replace(choose.file_url, "https://r34-json-api.herokuapp.com/images?url=","");
-                        Tools.sendMessage(nm, m.channel_id.id);
+                        //Tools.sendMessage(nm, m.channel_id.id);
+
+                        if (choose.type == "video") {
+                            Tools.sendMessage('Score:${choose.score} Id:${choose.id} ${nm}', m.channel_id.id);
+                        } else {
+                            var embed:Embed = {
+                                image: {url: nm},
+                                title: "Rule34",
+                                url: "https://rule34.xxx/index.php?page=post&s=view&id="+choose.id,
+                                author: {name: "Score: " + choose.score, icon_url: "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcREQThzshgW7gT2yGDvszv0vWhtPH7HfAv4D9UogSp_V8CVO4O1&usqp=CAU"},
+                                color: 0x3fe885,
+                            }
+                            Tools.sendEmbed(embed, m.channel_id.id);
+                        }
+
                     }
                     else {
                         if (++r < jlist.length) {
@@ -77,10 +92,25 @@ class Rule34 {
             var choose:Rule34File = jlist[r];  
             if (choose != null) { 
                 var nm = StringTools.replace(choose.file_url, "https://r34-json-api.herokuapp.com/images?url=","");
-                if (m.inGuild())
-                    Tools.sendMessage('||$nm ||', m.channel_id.id);   
-                else 
-                    Tools.sendMessage(nm, m.channel_id.id);  
+                if (m.inGuild()) {
+                    Tools.sendMessage('Score:${choose.score} Id:${choose.id} ||${nm} ||', m.channel_id.id);   
+                } else {
+                    //Tools.sendMessage(nm, m.channel_id.id);  
+                    
+                    if (choose.type == "video") {
+                        Tools.sendMessage('Score:${choose.score} Id:${choose.id} ${nm}', m.channel_id.id);
+                    } else {
+                        var embed:Embed = {
+                            image: {url: nm},
+                            title: "Rule34",
+                            url: "https://rule34.xxx/index.php?page=post&s=view&id="+choose.id,
+                            author: {name: "Score: " + choose.score, icon_url: "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcREQThzshgW7gT2yGDvszv0vWhtPH7HfAv4D9UogSp_V8CVO4O1&usqp=CAU"},
+                            color: 0x3fe885,
+                        }
+                        Tools.sendEmbed(embed, m.channel_id.id);
+                    }
+
+                }
             } else {
                 Tools.sendMessage("ничего не нашел", m.channel_id.id);
             }
@@ -92,6 +122,17 @@ class Rule34 {
 
         rget.request();
     }
+
+    @command(["rlink","rl"], "Просто сделает ссылку на пост Rule34 по Id", "Id(обязателен)")
+    public static function glink(m:Message, words:Array<String>) {
+        var id = words.shift();
+        if (id != null) {
+            Tools.reply(m, "https://rule34.xxx/index.php?page=post&s=view&id="+id);
+        } else {
+            Tools.reply(m, "Не указан Id");
+        }
+    }
+
 }
 
 
@@ -99,4 +140,6 @@ typedef Rule34File = {
     var score:String;
     var file_url:String;
     var tags:Array<String>;
+    var id:String;
+    var type:String;
 }

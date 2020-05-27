@@ -32,6 +32,7 @@ class TrapGame {
 
                 tg.result = itog;
                 tg.messageId = gm.id.id;
+                
 
                 rget.onData = function (data:String) {  
                     var jlist:Gelbooru.GelbooruFile = Json.parse(data); 
@@ -45,8 +46,11 @@ class TrapGame {
                                 
                         var timer = new Timer(1000*30);
                         tg.t = timer;
+                        
+                        tg.id = choose.id;
+
                         timer.run = function() {
-                            gm.edit({embed:{title: "время вышло", author: {icon_url: m.author.avatarUrl, name: m.author.username }}});
+                            gm.edit({embed:{title: "время вышло", author: {icon_url: m.author.avatarUrl, name: m.author.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id}});
                             trapGames.remove(m.author.id.id);
                             timer.stop();
                         }     
@@ -75,11 +79,11 @@ class TrapGame {
             if (tg.messageId == m.id.id) {
                 if (e.name == "♂️" || e.name == "♀️") {
                     if (e.name == "♀️" && tg.result == 0) {
-                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }}});
+                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id}});
                     } else if (e.name == "♂️" && tg.result == 1) {
-                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }}});
+                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id}});
                     } else {
-                        m.edit({embed: {title: "НЕТ!", author: {icon_url: u.avatarUrl, name: u.username }}});
+                        m.edit({embed: {title: "НЕТ!", author: {icon_url: u.avatarUrl, name: u.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id}});
                     }
                     tg.t.stop();
                     trapGames.remove(u.id.id);
@@ -94,4 +98,5 @@ typedef  TrapgameType = {
     var ?result:Int; 
     var ?messageId:String; 
     var ?t:Timer;
+    var ?id:String;
 }

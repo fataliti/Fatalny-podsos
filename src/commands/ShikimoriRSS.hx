@@ -58,6 +58,7 @@ class ShikimoriRss {
                             title: it.node.title.innerData,
                             url: it.node.link.innerData,
                             author: {name: "Шикимори RSS",icon_url: "https://sun9-8.userapi.com/c858528/v858528133/103c37/vRt_i6Mp1_k.jpg?ava=1",},
+                            color: 0xFFFFFF,
                         };
 
                         var g = it.node.guid.innerData;
@@ -80,7 +81,6 @@ class ShikimoriRss {
                 rget.request();
             }
         }
-
     }
 
     @command(["shikiSub"], "Подписать канал на рассылку новостей с Shikimori")

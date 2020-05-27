@@ -9,13 +9,10 @@ import haxe.rtti.Meta;
 class OnReactionAdd {
     public static function onReactionAdd(m:Message, u:User, e:Emoji) {
         var classes = CompileTime.getAllClasses("commands");
-
         for (_class in classes) {
-            var statics = Meta.getStatics(_class);
-            for(s in Reflect.fields(statics)) {
-                if (s == "rectionAdd") {
-                    Reflect.callMethod(_class, Reflect.field(_class, s), [m, u , e]);
-                }
+            var s = Reflect.fields(Meta.getStatics(_class)).filter((e) -> e == "rectionAdd")[0];
+            if (s != null) {
+                Reflect.callMethod(_class, Reflect.field(_class, s), [m, u , e]);
             }
         }
     }  

@@ -1,5 +1,6 @@
 package commands;
 
+import com.raidandfade.haxicord.types.structs.Embed;
 import commands.Gelbooru.GelbooruFile;
 import com.raidandfade.haxicord.types.Message;
 import com.raidandfade.haxicord.utils.DPERMS;
@@ -19,7 +20,6 @@ class TimedPost {
     public static function initialize() {
         if (FileSystem.exists("subList.txt")) {
             subList = Json.parse(File.getContent("subList.txt"));
-            //trace(subList);
         }
         var timer = new Timer(60 * 1000 * 15);
         timer.run = function() {
@@ -27,7 +27,6 @@ class TimedPost {
             for(sub in subList) {
 
                 var find = "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags="+sub.tags.join("+")+"&page="+Std.string(Std.random(sub.page));
-                //trace(find);
                 var rget = new Http(find);
                 
                 rget.onData = function (data:String) {  
@@ -57,7 +56,19 @@ class TimedPost {
 
                             if (!fail) {
                                 finding = false;
-                                Tools.sendMessage(choose.file_url, sub.chanId);
+                                if (StringTools.endsWith(choose.file_url,".webm")) {
+                                    Tools.sendMessage('Score:${choose.score} Id:${choose.id} ${choose.file_url}', sub.chanId);
+                                } else {
+                                    var embed:Embed = {
+                                        image: {url: choose.file_url},
+                                        title: "Gelbooru",
+                                        url: "https://gelbooru.com/index.php?page=post&s=view&id="+choose.id,
+                                        author: {name: "Score: " + choose.score, icon_url: "https://pbs.twimg.com/profile_images/1118350008003301381/3gG6lQMl.png"},
+                                        color: 0x3333FF,
+                                    }
+                                    Tools.sendEmbed(embed, sub.chanId);
+                                }
+
                             }
                             else {
                                 if (++r < jlist.count) {
