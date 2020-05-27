@@ -47,6 +47,8 @@ class ShikimoriRss {
             if (guidMax != 0) {
                 var rget = new Http("https://shikimori.one/forum/news.rss");
 
+                var newGuid = guidMax;
+
                 rget.onData = function(data:String) {
                     var xm = Parser.parse(data);
                     var acc = new Access(xm.firstElement());
@@ -61,17 +63,19 @@ class ShikimoriRss {
                         var g = it.node.guid.innerData;
                         g = StringTools.replace(g,"entry-","");
                         var guid = Std.parseInt(g);
+                        
+                        if (newGuid < guid) 
+                            newGuid = guid;
 
                         if (guid <= guidMax) {
-                            guidMax = guid;
                             break;
+                        } else {
+                            for (sub in shikiSubs) {
+                                Tools.sendEmbed(embed, sub);
+                            }
                         }
-
-                        for (sub in shikiSubs) {
-                            Tools.sendEmbed(embed, sub);
-                        }
-                        
                     }
+                    guidMax = newGuid;
                 }
                 rget.request();
             }
