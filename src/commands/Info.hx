@@ -62,10 +62,12 @@ class Info {
             for (_class in classList) {
                 var statics = Meta.getStatics(_class);
                 for(s in Reflect.fields(statics)) {
-                    if (s == "initialize" || s == "down" || s == "rectionAdd")
-                        continue;
-                    
+    
                     var field = Reflect.field(statics, s);
+
+                    if (!Reflect.hasField(field, "command"))
+                        continue;
+
                     answer += '**${field.command[0].join(", ")}**: ${field.command[1]}\n';
                 } 
             }
@@ -76,6 +78,11 @@ class Info {
     @command(["invite"], "Ссылка для добавления бота на свой сервер") 
     public static function invite(m:Message) {
         Tools.reply(m, 'Приглашение для бота: ${Bot.bot.getInviteLink()}');
+    }
+
+    @command(["ison"], "Проверить отвечает ли бот")
+    public static function ison(m:Message)  {
+        Tools.reply(m, "да-да я работаю");
     }
 
 }

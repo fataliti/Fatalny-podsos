@@ -41,7 +41,6 @@ class Rule34 {
                     if (!fail) {
                         finding = false;
                         var nm = StringTools.replace(choose.file_url, "https://r34-json-api.herokuapp.com/images?url=","");
-                        //Tools.sendMessage(nm, m.channel_id.id);
 
                         if (choose.type == "video") {
                             Tools.sendMessage('Score:${choose.score} Id:${choose.id} ${nm}', m.channel_id.id);
@@ -94,9 +93,7 @@ class Rule34 {
                 var nm = StringTools.replace(choose.file_url, "https://r34-json-api.herokuapp.com/images?url=","");
                 if (m.inGuild()) {
                     Tools.sendMessage('Score:${choose.score} Id:${choose.id} ||${nm} ||', m.channel_id.id);   
-                } else {
-                    //Tools.sendMessage(nm, m.channel_id.id);  
-                    
+                } else {   
                     if (choose.type == "video") {
                         Tools.sendMessage('Score:${choose.score} Id:${choose.id} ${nm}', m.channel_id.id);
                     } else {
@@ -130,6 +127,31 @@ class Rule34 {
             Tools.reply(m, "https://rule34.xxx/index.php?page=post&s=view&id="+id);
         } else {
             Tools.reply(m, "Не указан Id");
+        }
+    }
+
+    @command(["r34total","rt"], "Количество постов на Rulre34 с указанным тегом", "тег(обязателен)") 
+    public static function r34total(m:Message, words:Array<String>) {
+        var tag = words.shift();
+        if (tag != null) {
+            var rget = new Http("https://r34-json-api.herokuapp.com/tags?name="+tag);
+
+            rget.onData = function (data:String) {
+                var result:{var ?name:String;var ?types:Array<String>; var ?posts:String;} = Json.parse(data)[0]; 
+                if (result != null) {
+                    Tools.sendMessage('По тегу **${result.name}** есть **${result.posts}** постов', m.channel_id.id);
+                } else {
+                    Tools.reply(m, 'По запросу **${tag}** нет ни одного поста');
+                }
+            }
+
+            rget.onError = function(error) {
+                m.react("⚠️");
+            }
+
+            rget.request();
+        } else {
+            Tools.reply(m, "Не указан тег");
         }
     }
 

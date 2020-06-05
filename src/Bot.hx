@@ -6,7 +6,7 @@ import events.*;
 class Bot {
     
     public static var bot:DiscordClient;
-    public static var token:String = "NjY2Mjk5MTM0NTc5NDQxNjY0.Xm3FkQ.qgW0_zAC3yrjBBEerfd3KFo3Vmo";
+    public static var token:String = "NjY2Mjk5MTM0NTc5NDQxNjY0.Xs1iu55645645458454545";
     public static var prefix = "!";
 
     public static var commandMap:Map<String,Command> = new Map();
@@ -15,6 +15,7 @@ class Bot {
         bot = new DiscordClient(token);
         bot.onMessage = OnMessage.onMessage;
         bot.onReactionAdd = OnReactionAdd.onReactionAdd;
+        bot.onReactionRemove = OnReactionDel.onReactionDel;
         bot.ws.onClose = OnClose.onClose;
         bot.onReady = OnReady.onReady;
     }

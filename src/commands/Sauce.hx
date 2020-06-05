@@ -18,9 +18,14 @@ class SauceNao {
     public static function sauce(m:Message, words:Array<String>) {
 
         var pic = words.shift();
-        if (pic == null)
+        if (pic == null) {
+            Tools.reply(m, "кажется ты не дал мне ссылку на картинку");
             return;
-
+        }
+        var i = pic.indexOf("?");
+        if (i!=-1) {
+            pic = pic.substr(0, i);
+        }
         var url = "https://saucenao.com/search.php?api_key="+apiKey+"&db=999&output_type=2&testmode=1&numres=10&url="+pic;
         var rget = new Http(url);
 
@@ -82,9 +87,8 @@ class SauceNao {
         m.edit({embed: embed});
     }
 
-    @rectionAdd
-    public static function rectionAdd(m:Message, u:User, e:Emoji) {
-
+    @reactionAdd
+    public static function reactionAdd(m:Message, u:User, e:Emoji) {
         if (u.bot)
             return;
 
@@ -107,6 +111,10 @@ class SauceNao {
         }
     }
 
+    @reactionDel
+    public static function reactionDel(m:Message, u:User, e:Emoji) {
+        reactionAdd(m, u, e);
+    }
 }
 
 

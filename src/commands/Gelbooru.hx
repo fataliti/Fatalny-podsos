@@ -1,7 +1,5 @@
 package commands;
 
-import com.raidandfade.haxicord.endpoints.Endpoints;
-import com.raidandfade.haxicord.endpoints.Typedefs.MessageCreate;
 import com.raidandfade.haxicord.types.structs.Embed;
 import com.raidandfade.haxicord.types.Message;
 import haxe.Http;
@@ -81,7 +79,7 @@ class Gelbooru {
         rget.request();
     }
 
-    @command(["gelboorua", "gg", "gа"], "Запрос картинки от Gelbooru без использования черного листа", "теги(опционально)")
+    @command(["gelboorua", "gg", "ga"], "Запрос картинки от Gelbooru без использования черного листа", "теги(опционально)")
     public static function gelbooruAll(m:Message, words:Array<String>) {
         var find = "https://gelbooru-xsd8bjco8ukx.runkit.sh/posts?tags=";
         for(w in words)

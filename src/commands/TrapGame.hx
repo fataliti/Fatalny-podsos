@@ -12,6 +12,7 @@ import com.raidandfade.haxicord.endpoints.Endpoints.ErrorReport;
 class TrapGame {
 
     static var trapGames:Map<String,TrapgameType> = new Map();
+    static var strics:Map<String,Int> = new Map();
 
     @command(["play","trap"], "Игра в которой вам нужно угадать мальчик перед вами или девочка")
     public static function trap(m:Message) {
@@ -72,18 +73,60 @@ class TrapGame {
         }
     }
 
-    @rectionAdd
-    public static function rectionAdd(m:Message, u:User, e:Emoji) {
+    static var strikMsg = [
+        "Угадал!",
+        "Двойное угадывание!",
+        "Тройное угадывание!",
+        "Безумие!",
+        "Доминирование!",
+        "Мегаугадывание",
+        "Неудержимый",
+        "Полный улет",
+        "Чудовищное угадывание!",
+        "Божественно!",
+        "Более чем божественно!",
+        "ПРЕВОСХОДИТ ВСЕХ БОГОВ!!!",
+    ];
+
+
+    static function update(u:User, m:Message, tg:TrapgameType) {
+        var mn = strics[u.id.id];
+        if (mn == null) {
+            mn = 0;
+            strics[u.id.id] = 0;
+        }
+        if (mn >= strikMsg.length)
+            mn = strikMsg.length-1;
+
+        var txt = strikMsg[ mn];
+        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id, footer: {text: txt}}});
+    
+        strics[u.id.id]++;
+    }
+
+    @reactionAdd
+    public static function reactionAdd(m:Message, u:User, e:Emoji) {
         if (trapGames.exists(u.id.id)) {
             var tg = trapGames.get(u.id.id);
             if (tg.messageId == m.id.id) {
                 if (e.name == "♂️" || e.name == "♀️") {
                     if (e.name == "♀️" && tg.result == 0) {
-                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id}});
+                        update(u, m, tg);
                     } else if (e.name == "♂️" && tg.result == 1) {
-                        m.edit({embed: {title: "ВЕРНО!", author: {icon_url: u.avatarUrl, name: u.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id}});
+                        update(u, m, tg);
                     } else {
-                        m.edit({embed: {title: "НЕТ!", author: {icon_url: u.avatarUrl, name: u.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id}});
+
+                        var txt;
+                        if (strics[u.id.id] == null || strics[u.id.id] == 0) {
+                            txt = "ни разу не угадал";
+                        } else {
+                            txt = 'серия из ${strics[u.id.id]} угадываний была первана';
+                            strics.set(u.id.id, 0);
+                        }
+
+
+                        m.edit({embed: {title: "НЕТ!", author: {icon_url: u.avatarUrl, name: u.username }, url: "https://gelbooru.com/index.php?page=post&s=view&id="+tg.id, footer: {text: txt}}});
+                    
                     }
                     tg.t.stop();
                     trapGames.remove(u.id.id);
