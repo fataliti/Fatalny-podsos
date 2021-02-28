@@ -1,5 +1,6 @@
 package commands;
 
+import sys.db.Sqlite;
 import sys.FileSystem;
 import sys.io.File;
 import com.raidandfade.haxicord.utils.DPERMS;
@@ -7,19 +8,29 @@ import com.raidandfade.haxicord.types.Message;
 
 import haxe.Json;
 
+@desc("BlackList","Модуль черного списка")
 class BlackList {
 
     public static var blackLists:Map<String,Array<String>> = new Map(); 
 
     @initialize 
     public static function initialize() {
-        if (FileSystem.exists("blackLists.txt")) {
-            var saveData:Array<Array<String>> = Json.parse(File.getContent("blackLists.txt"));
-            for(array in saveData) {
-                var serverId = array.shift();
-                blackLists.set(serverId, array);
-            }
-        } 
+
+        Bot.db.request("
+            CREATE TABLE IF NOT EXISTS 'blacklist' (	
+                'id' INTEGER PRIMARY KEY AUTOINCREMENT,
+                'servId' TEXT, 
+                'word' TEXT
+            )
+        ");
+
+        var list = Bot.db.request('SELECT servId, word FROM blacklist');
+        for (pos in list) {
+            if (blackLists[pos.servId] == null) {
+                blackLists[pos.servId] = [];
+            } 
+            blackLists[pos.servId].push(pos.word);
+        }
     }
 
     static function chekId(m:Message):String {
@@ -33,7 +44,7 @@ class BlackList {
             return m.author.id.id;
     }
 
-    @command(["add"],"Добавить теги в черный список сервера","теги")
+    @command(["add"],"Добавить теги в черный список сервера","?теги")
     public static function add(m:Message, words:Array<String>) {
         
         var _id:String = chekId(m);
@@ -44,19 +55,19 @@ class BlackList {
             blackLists.set(_id, []);
         }
 
-        var list = blackLists.get(_id);
+        var list= blackLists.get(_id);
         for(w in words){
             if (list.indexOf(w) == -1) {
                 list.push(w);
-                Tools.sendMessage('$w добавил в блеклист', m.channel_id.id);
+                Bot.db.request('INSERT INTO blacklist(servId, word) VALUES("${_id}","${w}")');
             }
         } 
+        var j = list.join(' ');
+        Tools.sendMessage('Текущий блеклист: `${j}`', m.channel_id.id);
     }
 
-    @command(["del"],"Удалить теги из черного списка сервера", "теги")
+    @command(["del"],"Удалить теги из черного списка сервера", "?теги")
     public static function del(m:Message, words:Array<String>) {
-
-
         var _id:String = chekId(m);
         if (_id == null)
             return;
@@ -69,35 +80,23 @@ class BlackList {
         var list = blackLists.get(_id);
         for(w in words){
             if (list.remove(w))
-                Tools.sendMessage('$w удалил из блеклиста', m.channel_id.id);
+                Bot.db.request('DELETE FROM blacklist WHERE servId = "${_id}" AND word = "${w}"');
         }    
-
+        var j = list.join(' ');
+        Tools.sendMessage('Текущий блеклист: `${j}`', m.channel_id.id);
     }
 
     @command(["blacklist", "list",],"Показать черный список тегов сервера")
     public static function blacklist(m:Message) {
         var _id = m.inGuild() ? m.getGuild().id.id : m.author.id.id;
-        if (blackLists.exists(_id)) 
-            Tools.sendMessage("Черный список тегов: "+ blackLists.get(_id).join(" "), m.channel_id.id);
-         else 
+        if (blackLists.exists(_id)) {
+            var j = blackLists[_id].join(' ');
+            Tools.sendMessage('Текущий блеклист: `${j}`', m.channel_id.id);
+        } else {
             Tools.reply(m, "Блеклиста нету");
-    }
-
-    @down
-    public static function down() {
-        var saveData:Array<Array<String>> = new Array(); 
-
-        for(key in blackLists.keys()) {
-            var array:Array<String> = new Array();
-            array.push(key);
-            for(tag in blackLists.get(key)) {
-                array.push(tag);
-            }
-            saveData.push(array);
         }
-
-        File.saveContent("blackLists.txt", Json.stringify(saveData));
     }
+
 
 }
 

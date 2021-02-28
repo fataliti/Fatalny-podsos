@@ -3,5 +3,5 @@
 -lib compiletime
 -main Bot
 
-
 -cpp bin/bot_windows_cpp
+#--neko bin/neko/bot.n

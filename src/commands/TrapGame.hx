@@ -9,6 +9,8 @@ import com.raidandfade.haxicord.types.User;
 import com.raidandfade.haxicord.types.structs.Emoji;
 import com.raidandfade.haxicord.endpoints.Endpoints.ErrorReport;
 
+
+@desc("TrapGame","Модуль игры")
 class TrapGame {
 
     static var trapGames:Map<String,TrapgameType> = new Map();

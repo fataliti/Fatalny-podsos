@@ -13,7 +13,6 @@ class OnReady {
             statics = Meta.getStatics(_class);
 
             for(s in Reflect.fields(statics)) {
-
                 if (s == "initialize") {
                     Reflect.callMethod(_class, Reflect.field(_class,s),[]);
                     continue;
@@ -31,9 +30,9 @@ class OnReady {
                 }
             } 
         }
-
+        
         var a:Activity = {
-            name: "!info",
+            name: '${Bot.prefix}info',
             type: 0,
         };
         var s:Status = {

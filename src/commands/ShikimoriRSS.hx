@@ -1,11 +1,8 @@
 package commands;
 
 import com.raidandfade.haxicord.types.structs.Embed;
-import sys.FileSystem;
-import sys.io.File;
 import haxe.xml.Parser;
 import haxe.xml.Access;
-import haxe.Json;
 import haxe.Http;
 import haxe.Timer;
 
@@ -13,6 +10,8 @@ import haxe.Timer;
 import com.raidandfade.haxicord.types.Message;
 import com.raidandfade.haxicord.utils.DPERMS;
 
+
+@desc("ShikimoriRss","Модуль автопостинга новостей с Shikimori")
 class ShikimoriRss {
    
     static var shikiSubs:Array<String> = new Array();
@@ -21,13 +20,16 @@ class ShikimoriRss {
     @initialize
     public static function initialize() {
 
-        if (FileSystem.exists("ShikimoriSave.txt")) {
-            var load:ShikimoriSave = Json.parse(File.getContent("ShikimoriSave.txt"));
-            guidMax = load.guid;
-            shikiSubs = load.subs;
-        } 
 
-        if (guidMax == 0) {
+        Bot.db.request("
+            CREATE TABLE IF NOT EXISTS 'shikiSub' (
+                'servId' TEXT PRIMARY KEY, 
+                'chanId' TEXT
+            )
+        ");
+
+        var g = Bot.db.request('SELECT chanId FROM shikiSub WHERE servId = "guid"');
+        if ( g.length == 0) {
             var rget = new Http("https://shikimori.one/forum/news.rss");
             rget.onData = function(data:String) {
                 var xm = Parser.parse(data);
@@ -38,10 +40,17 @@ class ShikimoriRss {
                 var guid = Std.parseInt(g);
                 guidMax = guid; 
                 trace("new shikimori guid get " + guidMax);
+                Bot.db.request('INSERT OR REPLACE INTO shikiSub(servId, chanId) VALUES("guid", "${guidMax}")');
             }
             rget.request();
+        } else {
+            guidMax = g.next().chanId;
         }
 
+        for (row in Bot.db.request('SELECT chanId FROM shikiSub WHERE NOT servId = "guid"')) {
+            shikiSubs.push(row.chanId);
+        }
+        
         var shikitimer = new Timer(60 * 1000 * 10);
         shikitimer.run = function() {
             if (guidMax != 0) {
@@ -77,6 +86,7 @@ class ShikimoriRss {
                         }
                     }
                     guidMax = newGuid;
+                    Bot.db.request('INSERT OR REPLACE INTO shikiSub(servId, chanId) VALUES("guid", "${guidMax}")');
                 }
                 rget.request();
             }
@@ -92,15 +102,16 @@ class ShikimoriRss {
         if (!m.hasPermission(DPERMS.MANAGE_CHANNELS)) {
             Tools.reply(m, "Нужно право управлять каналами");
             return;
-        }
-
-        if (shikiSubs.indexOf(m.channel_id.id) == -1) {
-            shikiSubs.push(m.channel_id.id);
+        }   
+        
+        var g = m.getGuild().id.id;
+        var exist = Bot.db.request('SELECT chanId From shikiSub chanId WHERE servId = ' + g);
+        if (exist.length == 0) {
+            Bot.db.request('INSERT INTO shikiSub(servId,chanId) VALUES(${g},${m.channel_id.id})');
             Tools.reply(m, "Теперь канал подписан");
         } else {
             Tools.reply(m, "Канал уже подписан");
         }
-
     }
 
     @command(["shikiUnsub"], "Отписаться от рассылки")
@@ -113,22 +124,16 @@ class ShikimoriRss {
             Tools.reply(m, "Нужно право управлять каналами");
             return;
         }
+        
+        var g = m.getGuild().id.id;
+        var exist = Bot.db.request('SELECT chanId From shikiSub chanId WHERE servId = ' + g);
 
-        if (shikiSubs.remove(m.channel_id.id)) {
+        if (exist.length > 0) {
+            Bot.db.request('DELETE FROM shikisub WHERE servId = ' + g);
             Tools.reply(m, "Теперь канал отписан");
         } else {
             Tools.reply(m, "Может для начала стоило подписать канал?");
         }
-
-    }
-
-    @down
-    public static function down() {
-        var shikimoriSave:ShikimoriSave = {
-            subs: shikiSubs,
-            guid: guidMax,
-        }
-        File.saveContent("ShikimoriSave.txt", Json.stringify(shikimoriSave));
     }
 
 }

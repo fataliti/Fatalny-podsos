@@ -10,11 +10,13 @@ import haxe.Timer;
 import haxe.Json;
 import haxe.Http;
 
+
+@desc("SauceNao","Модуль поиска сурса изображений")
 class SauceNao {
-    static var apiKey:String = "";
+    static var apiKey:String = "763b68a3dcafc8a6a2b22d92db2d5bf9586cdd62";
     static var sauceMap:Map<String, {var ?num:Int; var ?src:SauceFile;}> = new Map();
 
-    @command(["sauce", "s"], "Найти сурс изображения по ссылке", "ссылка на изображение(обязательна)")
+    @command(["sauce", "s"], "Найти сурс изображения по ссылке", ">ссылка")
     public static function sauce(m:Message, words:Array<String>) {
 
         var pic = words.shift();
